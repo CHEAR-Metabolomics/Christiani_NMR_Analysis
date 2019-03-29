@@ -18,6 +18,7 @@ Load Christiani pilot data
 
 ``` r
 NMR_log_cs<-read.csv(paste0(base.dir,'\\Christiani_NMR_log_cs.csv'),header=T)
+#load(url('https://github.com/CHEAR-Metabolomics/Data/blob/master/Christiani_NMR.RData'))
 ```
 
 Subset data to metabolites
@@ -49,135 +50,7 @@ ap <- fa.parallel(NMR_sub) # Consensus is 5 factors
 
 
 fa <- fa(NMR_sub,5,n.obs = 194,fm="minres", scores="tenBerge", warnings=TRUE)
-```
-
-    ## Factor Analysis using method =  minres
-    ## Call: fa(r = NMR_sub, nfactors = 5, n.obs = 194, scores = "tenBerge", 
-    ##     warnings = TRUE, fm = "minres")
-    ## Standardized loadings (pattern matrix) based upon correlation matrix
-    ##                             item    MR1    MR5    MR2    MR3    MR4    h2
-    ## Succinic_acid                 34  0.855                             0.849
-    ## Glycerol                      25  0.839                             0.815
-    ## Choline                       21  0.832                             0.674
-    ## Myo_inositol                  37  0.800                             0.835
-    ## Acetic_acid                   19  0.605                             0.550
-    ## CAR_2_0_                      15  0.584                             0.649
-    ## Creatine                      22  0.579                             0.705
-    ## Citric_acid                    2  0.531                             0.440
-    ## Lactic_acid                   28  0.524  0.368                      0.708
-    ## Betaine                       20  0.503                0.371        0.445
-    ## Phenylalanine                  9  0.477  0.431               -0.412 0.700
-    ## Serine                        11  0.450  0.337                      0.571
-    ## sn_glycero_3_phosphocholine   38  0.323                             0.218
-    ## beta_hydroxybutyric_acid      18                                    0.198
-    ## Valine                        14         0.877                      0.748
-    ## X_1_Methylhistidine           39         0.782                      0.687
-    ## Lysine                         8         0.774                      0.784
-    ## Leucine                        7  0.339  0.695                      0.924
-    ## Isoleucine                     6         0.654                      0.670
-    ## Glycine                        5         0.637                      0.704
-    ## Tyrosine                      13         0.591                      0.538
-    ## Glutamic_acid                  4  0.303  0.500                      0.678
-    ## Acetylcholine                 29         0.497                0.330 0.775
-    ## Proline                       10         0.479                0.371 0.686
-    ## Glycolic_acid                 26         0.387                0.304 0.459
-    ## Alanine                        1         0.349                      0.282
-    ## Creatinine                     3         0.318                      0.331
-    ## X_3_amino_isobutanoic_acid    17                0.752               0.590
-    ## Thymol                        35                0.643               0.373
-    ## X_2_hydroxybutyric_acid       16         0.301  0.548               0.682
-    ## Propionic_acid                31                0.438               0.491
-    ## Isopropyl_alcohol             27                0.407               0.213
-    ## Threonine                     12                0.333               0.376
-    ## Glucose                       24                       0.820        0.655
-    ## Pyruvic_acid                  33                      -0.492  0.383 0.441
-    ## Propylene_glycol              32                       0.304        0.138
-    ## Trimethylamine_N_oxide        36                              0.656 0.688
-    ## Formic_acid                   23  0.331                      -0.422 0.339
-    ## Choline_phosphate             30  0.305                       0.319 0.320
-    ##                                 u2  com
-    ## Succinic_acid               0.1514 1.27
-    ## Glycerol                    0.1846 1.08
-    ## Choline                     0.3255 1.09
-    ## Myo_inositol                0.1652 1.36
-    ## Acetic_acid                 0.4501 1.34
-    ## CAR_2_0_                    0.3508 1.79
-    ## Creatine                    0.2954 1.77
-    ## Citric_acid                 0.5604 2.37
-    ## Lactic_acid                 0.2922 2.48
-    ## Betaine                     0.5545 2.36
-    ## Phenylalanine               0.2997 3.14
-    ## Serine                      0.4287 2.21
-    ## sn_glycero_3_phosphocholine 0.7824 3.78
-    ## beta_hydroxybutyric_acid    0.8018 2.52
-    ## Valine                      0.2516 1.06
-    ## X_1_Methylhistidine         0.3135 1.27
-    ## Lysine                      0.2156 1.66
-    ## Leucine                     0.0764 1.61
-    ## Isoleucine                  0.3304 1.31
-    ## Glycine                     0.2962 1.79
-    ## Tyrosine                    0.4623 1.61
-    ## Glutamic_acid               0.3223 2.23
-    ## Acetylcholine               0.2253 2.88
-    ## Proline                     0.3143 2.36
-    ## Glycolic_acid               0.5407 2.45
-    ## Alanine                     0.7180 2.59
-    ## Creatinine                  0.6689 2.71
-    ## X_3_amino_isobutanoic_acid  0.4098 1.02
-    ## Thymol                      0.6271 1.21
-    ## X_2_hydroxybutyric_acid     0.3181 1.92
-    ## Propionic_acid              0.5089 2.12
-    ## Isopropyl_alcohol           0.7868 2.54
-    ## Threonine                   0.6235 3.23
-    ## Glucose                     0.3449 1.02
-    ## Pyruvic_acid                0.5592 2.03
-    ## Propylene_glycol            0.8624 2.80
-    ## Trimethylamine_N_oxide      0.3116 1.48
-    ## Formic_acid                 0.6613 2.49
-    ## Choline_phosphate           0.6803 4.08
-    ## 
-    ##                         MR1   MR5   MR2   MR3   MR4
-    ## SS loadings           7.389 7.138 2.943 2.113 2.345
-    ## Proportion Var        0.189 0.183 0.075 0.054 0.060
-    ## Cumulative Var        0.189 0.372 0.448 0.502 0.562
-    ## Proportion Explained  0.337 0.326 0.134 0.096 0.107
-    ## Cumulative Proportion 0.337 0.662 0.797 0.893 1.000
-    ## 
-    ##  With factor correlations of 
-    ##        MR1    MR5   MR2    MR3   MR4
-    ## MR1  1.000  0.550 0.132 -0.058 0.121
-    ## MR5  0.550  1.000 0.330 -0.164 0.237
-    ## MR2  0.132  0.330 1.000  0.099 0.342
-    ## MR3 -0.058 -0.164 0.099  1.000 0.005
-    ## MR4  0.121  0.237 0.342  0.005 1.000
-    ## 
-    ## Mean item complexity =  2.1
-    ## Test of the hypothesis that 5 factors are sufficient.
-    ## 
-    ## The degrees of freedom for the null model are  741  and the objective function was  32.202 with Chi Square of  5769.594
-    ## The degrees of freedom for the model are 556  and the objective function was  6.429 
-    ## 
-    ## The root mean square of the residuals (RMSR) is  0.04 
-    ## The df corrected root mean square of the residuals is  0.047 
-    ## 
-    ## The harmonic number of observations is  194 with the empirical chi square  468.293  with prob <  0.997 
-    ## The total number of observations was  194  with Likelihood Chi Square =  1130.496  with prob <  1.95e-41 
-    ## 
-    ## Tucker Lewis Index of factoring reliability =  0.8444
-    ## RMSEA index =  0.0799  and the 90 % confidence intervals are  0.067 NA
-    ## BIC =  -1798.433
-    ## Fit based upon off diagonal values = 0.988
-    ## Measures of factor score adequacy             
-    ##                                                     MR1   MR5   MR2   MR3
-    ## Correlation of (regression) scores with factors   0.980 0.981 0.923 0.923
-    ## Multiple R square of scores with factors          0.960 0.962 0.852 0.852
-    ## Minimum correlation of possible factor scores     0.921 0.924 0.704 0.704
-    ##                                                     MR4
-    ## Correlation of (regression) scores with factors   0.927
-    ## Multiple R square of scores with factors          0.860
-    ## Minimum correlation of possible factor scores     0.719
-
-``` r
+#print(fa,cut=0.3,digits=3, sort=T)
 fa.diagram(fa,rsize=0.15)
 ```
 
