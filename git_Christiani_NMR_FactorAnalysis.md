@@ -49,7 +49,6 @@ ap <- fa.parallel(NMR_sub) # Consensus is 5 factors
 
 
 fa <- fa(NMR_sub,5,n.obs = 194,fm="minres", scores="tenBerge", warnings=TRUE)
-print(fa,cut=0.3,digits=3, sort=T)
 ```
 
     ## Factor Analysis using method =  minres
