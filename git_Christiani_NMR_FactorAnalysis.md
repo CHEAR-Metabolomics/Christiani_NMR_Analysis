@@ -11,6 +11,9 @@ library(psych)
 library(nFactors)
 library(GPArotation)
 library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(broom)
 ```
 
 Load Christiani pilot data
@@ -73,7 +76,6 @@ fa_loadings<-fa_loadings[order(fa_loadings$max_factor,-fa_loadings$max_abs),]
 
 write.csv(fa_loadings, paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_loadings.csv"), row.names = T)
 
-
 Alldata_scores<-fa$scores
 write.csv(Alldata_scores, paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_scores.csv"), row.names = T)
 ```
@@ -86,91 +88,38 @@ NMR_EFA<-read.csv(paste0(base.dir,'\\FactorAnalysis\\NMR_EFA_scores.csv'),row.na
 NMR_EFA$ID<-row.names(NMR_EFA)
 Data<-merge(NMR_log_cs,NMR_EFA,by='ID')
 
-#crude models
-NMR_MR1<-glm(birthweight  ~ MR1, data = Data)
-summary(NMR_MR1)
-#            Estimate Std. Error t value Pr(>|t|)    
-#(Intercept)  2.93108    0.02839 103.255  < 2e-16 ***
-#MR1         -0.10914    0.02846  -3.835  0.00017 ***
-NMR_MR2<-glm(birthweight  ~ MR2, data = Data)
-summary(NMR_MR2)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  2.93108    0.02944  99.553   <2e-16 ***
-#MR2          0.01150    0.02952   0.389    0.697  
-NMR_MR3<-glm(birthweight  ~ MR3, data = Data)
-summary(NMR_MR3)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  2.93108    0.02945   99.54   <2e-16 ***
-#MR3          0.01005    0.02952    0.34    0.734   
-
-NMR_MR4<-glm(birthweight  ~ MR4, data = Data)
-summary(NMR_MR4)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  2.93108    0.02936  99.823   <2e-16 ***
-#MR4         -0.03214    0.02944  -1.092    0.276    
-
-NMR_MR5<-glm(birthweight  ~ MR5, data = Data)
-summary(NMR_MR5)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  2.93108    0.02944  99.577   <2e-16 ***
-#MR5         -0.01453    0.02951  -0.492    0.623
-
-#adjusted models
-Data$parity01<-as.factor(Data$parity01)
+Data$parity01<-as.factor(ifelse(Data$parity==0,0,1))
 Data$gender<-as.factor(Data$gender)
 Data$educat<-as.factor(Data$educat)
 
-NMR_MR1<-glm(birthweight  ~ MR1+bmi+ga.spline1+ga.spline2+ga.spline3+parity01+gender+educat, data = Data)
-summary(NMR_MR1)
-#(Intercept)  1.829782   0.244832   7.474 3.06e-12 ***
-#MR1         -0.051100   0.026990  -1.893 0.059886 . 
+Data.set<-Data%>%
+  select(ID,parity01,gender,educat,ga.spline1,ga.spline2,ga.spline3,bmi,birthweight,headcircumference,MR1,MR2,MR3,MR4,MR5)%>%
+  rename(EF1=MR1,EF2=MR2,EF3=MR3,EF4=MR4,EF5=MR5)%>%
+  gather(Factor,Score,-c(ID,parity01,gender,educat,ga.spline1,ga.spline2,ga.spline3,bmi,birthweight,headcircumference))
 
-NMR_MR2<-glm(birthweight  ~ MR2+bmi+ga.spline1+ga.spline2+ga.spline3+parity01+gender+educat, data = Data)
-summary(NMR_MR2)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  1.759397   0.243997   7.211 1.40e-11 ***
-#MR2         -0.019687   0.026782  -0.735 0.463224    
-NMR_MR3<-glm(birthweight  ~ MR3+bmi+ga.spline1+ga.spline2+ga.spline3+parity01+gender+educat, data = Data)
-summary(NMR_MR3)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  1.759737   0.244195   7.206 1.43e-11 ***
-#MR3          0.012899   0.026250   0.491 0.623730    
+#crude models
+BW.fit_crude = Data.set %>% 
+  group_by(Factor) %>%
+  do(tidy(glm(birthweight ~ Score, data = .),conf.int=T))%>%
+  filter(term=='Score')
 
-NMR_MR4<-glm(birthweight  ~ MR4+bmi+ga.spline1+ga.spline2+ga.spline3+parity01+gender+educat, data = Data)
-summary(NMR_MR4)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  1.761288   0.244862   7.193 1.55e-11 ***
-#MR4         -0.002795   0.026035  -0.107 0.914610    
+#adjusted models
+BW.fit_adj = Data.set %>% 
+  group_by(Factor) %>%
+  do(tidy(glm(birthweight ~ Score + bmi+ga.spline1+ga.spline2+ga.spline3+parity01+gender+educat, data = .),conf.int=T))%>%
+  filter(term=='Score')
 
-NMR_MR5<-glm(birthweight  ~ MR5+bmi+ga.spline1+ga.spline2+ga.spline3+parity01+gender+educat, data = Data)
-summary(NMR_MR5)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept)  1.733868   0.244749   7.084 2.88e-11 ***
-#MR5         -0.028334   0.026266  -1.079  0.28212    
-```
-
-``` r
-table_EFA<-as.data.frame(rbind(EFA1=t(summary(NMR_MR1)$coefficients[2,]),
-                              EFA2=t(summary(NMR_MR2)$coefficients[2,]),
-                              EFA3=t(summary(NMR_MR3)$coefficients[2,]),
-                              EFA4=t(summary(NMR_MR4)$coefficients[2,]),
-                              EFA5=t(summary(NMR_MR5)$coefficients[2,])))
-                                      
-row.names(table_EFA)<-c('EFA1','EFA2','EFA3','EFA4','EFA5')
-Conf_NMR<-(as.data.frame(rbind(confint.default(NMR_MR1)[2,],confint.default(NMR_MR2)[2,],confint.default(NMR_MR3)[2,],confint.default(NMR_MR4)[2,],confint.default(NMR_MR5)[2,])))
-row.names(Conf_NMR)<-c('EFA1','EFA2','EFA3','EFA4','EFA5')
-table_EFA<-merge(table_EFA,Conf_NMR,by=0)
-write.csv(table_EFA, paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_BW_Table1.csv"), row.names = T)
+#save BW table
+write.csv(BW.fit_adj, paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_BW_Table1.csv"), row.names = T)
 ```
 
 NMR/BW EFA Figure
 =================
 
 ``` r
-table_NMRBW<-read.csv(paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_BW_Table1.csv"),row.names=1,check.names=F)
-names(table_NMRBW)[names(table_NMRBW)=='2.5 %']<-'LCL'
-names(table_NMRBW)[names(table_NMRBW)=='97.5 %']<-'UCL'
-ggplot(data=table_NMRBW,aes(x=Estimate,y=Row.names))+
+BW.fit_adj%>%
+  dplyr::rename(LCL=conf.low,UCL=conf.high)%>%
+  ggplot(data=.,aes(x=estimate,y=Factor))+
   geom_point(size=4,shape=16)+
   geom_errorbarh(aes(xmin=LCL,xmax=UCL),height=0.2)+
   geom_vline(xintercept=0,linetype="dashed")+
@@ -189,91 +138,37 @@ NMR_EFA<-read.csv(paste0(base.dir,'\\FactorAnalysis\\NMR_EFA_scores.csv'),row.na
 NMR_EFA$ID<-row.names(NMR_EFA)
 Data<-merge(NMR_log_cs,NMR_EFA,by='ID')
 
-#crude models
-NMR_MR1<-glm(headcircumference  ~ MR1, data = Data)
-summary(NMR_MR1)
-#            Estimate Std. Error t value Pr(>|t|)    
-#(Intercept) 32.56516    0.09087 358.390   <2e-16 ***
-#MR1         -0.12656    0.09095  -1.391    0.166  
-NMR_MR2<-glm(headcircumference  ~ MR2, data = Data)
-summary(NMR_MR2)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 32.56489    0.09131  356.65   <2e-16 ***
-#MR2          0.02471    0.09152    0.27    0.787 
-NMR_MR3<-glm(headcircumference  ~ MR3, data = Data)
-summary(NMR_MR3)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 32.56455    0.09100 357.833   <2e-16 ***
-#MR3          0.10551    0.09104   1.159    0.248    
-
-NMR_MR4<-glm(headcircumference  ~ MR4, data = Data)
-summary(NMR_MR4)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 32.56503    0.09004 361.658   <2e-16 ***
-#MR4         -0.21065    0.09006  -2.339   0.0204 * 
-
-NMR_MR5<-glm(headcircumference  ~ MR5, data = Data)
-summary(NMR_MR5)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 32.56453    0.09101 357.828   <2e-16 ***
-#MR5         -0.10532    0.09105  -1.157    0.249    
-
-#adjusted models
-Data$parity01<-as.factor(Data$parity01)
+Data$parity01<-as.factor(ifelse(Data$parity==0,0,1))
 Data$gender<-as.factor(Data$gender)
 Data$educat<-as.factor(Data$educat)
 
-NMR_MR1<-glm(headcircumference  ~ MR1+bmi+ga.spline1+ga.spline2+ga.spline3+birthweight+parity01+gender+educat, data = Data)
-summary(NMR_MR1)
-#(Intercept) 28.91755    0.91839  31.487  < 2e-16 ***
-#MR1          0.03341    0.08965   0.373   0.7098       
+Data.set<-Data%>%
+  select(ID,parity01,gender,educat,ga.spline1,ga.spline2,ga.spline3,bmi,birthweight,headcircumference,MR1,MR2,MR3,MR4,MR5)%>%
+  rename(EF1=MR1,EF2=MR2,EF3=MR3,EF4=MR4,EF5=MR5)%>%
+  gather(Factor,Score,-c(ID,parity01,gender,educat,ga.spline1,ga.spline2,ga.spline3,bmi,birthweight,headcircumference))
 
-NMR_MR2<-glm(headcircumference  ~ MR2+bmi+ga.spline1+ga.spline2+ga.spline3+birthweight+parity01+gender+educat, data = Data)
-summary(NMR_MR2)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 29.00024    0.89982  32.229  < 2e-16 ***
-#MR2         -0.05811    0.08741  -0.665   0.5071   
-NMR_MR3<-glm(headcircumference  ~ MR3+bmi+ga.spline1+ga.spline2+ga.spline3+birthweight+parity01+gender+educat, data = Data)
-summary(NMR_MR3)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 28.99965    0.89896  32.259  < 2e-16 ***
-#MR3          0.07355    0.08545   0.861   0.3905
+#crude models
+HC.fit_crude = Data.set %>% 
+  group_by(Factor) %>%
+  do(tidy(glm(headcircumference ~ Score, data = .),conf.int=T))%>%
+  filter(term=='Score')
 
-NMR_MR4<-glm(headcircumference  ~ MR4+bmi+ga.spline1+ga.spline2+ga.spline3+birthweight+parity01+gender+educat, data = Data)
-summary(NMR_MR4)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 29.08559    0.89396  32.536  < 2e-16 ***
-#MR4         -0.15511    0.08398  -1.847   0.0664 .    
+#adjusted models
+HC.fit_adj = Data.set %>% 
+  group_by(Factor) %>%
+  do(tidy(glm(headcircumference ~ Score + bmi+ga.spline1+ga.spline2+ga.spline3+parity01+gender+educat, data = .),conf.int=T))%>%
+  filter(term=='Score')
 
-NMR_MR5<-glm(headcircumference  ~ MR5+bmi+ga.spline1+ga.spline2+ga.spline3+birthweight+parity01+gender+educat, data = Data)
-summary(NMR_MR5)
-#            Estimate Std. Error t value Pr(>|t|)
-#(Intercept) 28.94126    0.89917  32.187  < 2e-16 ***
-#MR5         -0.08687    0.08605  -1.010    0.314     
-```
-
-``` r
-table_EFA<-as.data.frame(rbind(EFA1=t(summary(NMR_MR1)$coefficients[2,]),
-                              EFA2=t(summary(NMR_MR2)$coefficients[2,]),
-                              EFA3=t(summary(NMR_MR3)$coefficients[2,]),
-                              EFA4=t(summary(NMR_MR4)$coefficients[2,]),
-                              EFA5=t(summary(NMR_MR5)$coefficients[2,])))
-                                      
-row.names(table_EFA)<-c('EFA1','EFA2','EFA3','EFA4','EFA5')
-Conf_NMR<-(as.data.frame(rbind(confint.default(NMR_MR1)[2,],confint.default(NMR_MR2)[2,],confint.default(NMR_MR3)[2,],confint.default(NMR_MR4)[2,],confint.default(NMR_MR5)[2,])))
-row.names(Conf_NMR)<-c('EFA1','EFA2','EFA3','EFA4','EFA5')
-table_EFA<-merge(table_EFA,Conf_NMR,by=0)
-write.csv(table_EFA, paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_HC_Table1.csv"), row.names = T)
+write.csv(HC.fit_adj, paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_HC_Table1.csv"), row.names = T)
 ```
 
 NMR/HC EFA Figure
 =================
 
 ``` r
-table_NMRHC<-read.csv(paste0(base.dir,"\\FactorAnalysis\\NMR_EFA_HC_Table1.csv"),row.names=1,check.names=F)
-names(table_NMRHC)[names(table_NMRHC)=='2.5 %']<-'LCL'
-names(table_NMRHC)[names(table_NMRHC)=='97.5 %']<-'UCL'
-ggplot(data=table_NMRHC,aes(x=Estimate,y=Row.names))+
+HC.fit_adj%>%
+  dplyr::rename(LCL=conf.low,UCL=conf.high)%>%
+  ggplot(data=.,aes(x=estimate,y=Factor))+
   geom_point(size=4,shape=16)+
   geom_errorbarh(aes(xmin=LCL,xmax=UCL),height=0.2)+
   geom_vline(xintercept=0,linetype="dashed")+
