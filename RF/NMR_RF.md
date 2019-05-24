@@ -19,28 +19,24 @@ Load Christiani pilot data
 nmr<-read.csv(paste0(base.dir,'\\Christiani_NMR_log_cs.csv'),header=T)
 ```
 
-Metabolite z-scores
--------------------
-
-``` r
-nmr_metab <- nmr[c(48:86)]
-
-# z-score
-nmr_metab <- as.data.frame(lapply(nmr_metab, function(i) scale(i)))
-```
-
 Residual adjustment
 -------------------
 
 ``` r
+# z-score of metabolites
+nmr_metab_bw <- nmr[c(48:86)]
+nmr_metab_bw <- as.data.frame(lapply(nmr_metab_bw, function(i) scale(i)))
+
 ##  Birthweight residual matrix
 bw_model <- lm(birthweight ~ age + bmi + ga.spline1 + ga.spline2 + ga.spline3 + factor(gender) + factor(educat) + factor(parity01), data=nmr)
 bw_adj <- mean(nmr$birthweight) + bw_model$residuals
 
-nmr_metab$birthweight_adjusted <- as.vector(bw_adj)
+nmr_metab_bw$birthweight_adjusted <- as.vector(bw_adj)
 
 ## Head circumference residual matrix
-nmr_metab_hc <- nmr_metab[-which(is.na(nmr$headcircumference)),]
+nmr_metab_hc <- nmr[c(48:86)]
+nmr_metab_hc <- as.data.frame(lapply(nmr_metab_hc, function(i) scale(i)))
+nmr_metab_hc <- nmr_metab_hc[-which(is.na(nmr$headcircumference)),]
 nmr_hc <- nmr[-which(is.na(nmr$headcircumference)),]
 
 hc_model <- lm(headcircumference ~ age + bmi + ga.spline1 + ga.spline2 + ga.spline3 + factor(gender) + factor(educat) + factor(parity01), data=nmr_hc)
@@ -70,7 +66,7 @@ for(i in 1:nrow(hyper_grid)) {
   # train model
   model <- ranger(
     formula         = birthweight_adjusted ~ ., 
-    data            = nmr_metab, 
+    data            = nmr_metab_bw, 
     num.trees       = 1000,
     mtry            = hyper_grid$mtry[i],
     min.node.size   = hyper_grid$node_size[i],
@@ -93,30 +89,30 @@ Birth weight RF
 
 ``` r
 set.seed(seed_RF)
-nmr_RF <- randomForest(birthweight_adjusted ~ ., data=nmr_metab, 
+nmr_RF <- randomForest(birthweight_adjusted ~ ., data=nmr_metab_bw, 
                        ntree=1000, 
                        mtry=3,
                        nodesize=7, 
-                       sampsize=ceiling(0.55*nrow(nmr_metab)),
+                       sampsize=ceiling(0.55*nrow(nmr_metab_bw)),
                        importance=TRUE)
 
 varImpPlot(nmr_RF,type=1)
 ```
 
-![](NMR_RF_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](NMR_RF_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 ``` r
 varImpPlot(nmr_RF,type=2)
 ```
 
-![](NMR_RF_files/figure-markdown_github/unnamed-chunk-6-2.png)
+![](NMR_RF_files/figure-markdown_github/unnamed-chunk-5-2.png)
 
 Birth weight variable selection (altman method)
 -----------------------------------------------
 
 ``` r
 set.seed(seed_RF)
-alt_result <- PIMP(nmr_metab[-40], unlist(nmr_metab[40]), nmr_RF, S=500)
+alt_result <- PIMP(nmr_metab_bw[-40], unlist(nmr_metab_bw[40]), nmr_RF, S=500)
 
 summary(alt_result)
 ```
@@ -134,8 +130,8 @@ summary(PimpTest(alt_result))
     ## Call:
     ## PimpTest.default(Pimp = alt_result)
     ## 
-    ## PIMP.default(X = nmr_metab[-40], y = unlist(nmr_metab[40]), rForest = nmr_RF, 
-    ##     S = 500)
+    ## PIMP.default(X = nmr_metab_bw[-40], y = unlist(nmr_metab_bw[40]), 
+    ##     rForest = nmr_RF, S = 500)
     ## type:  [1] "regression"
     ## 
     ## 
@@ -184,8 +180,8 @@ for(i in 1:nrow(hyper_grid)) {
 hyper_grid[which(hyper_grid$OOB_RMSE==min(hyper_grid$OOB_RMSE)),]
 ```
 
-    ##   ntree mtry node_size sampe_size OOB_RMSE
-    ## 3  1000    5         3       0.55 1.155867
+    ##    ntree mtry node_size sampe_size OOB_RMSE
+    ## 51  1000    5         3        0.8 1.174115
 
 Head circumference RF
 ---------------------
@@ -202,13 +198,13 @@ nmr_RF <- randomForest(headcircumference_adjusted ~ ., data=nmr_metab_hc,
 varImpPlot(nmr_RF,type=1)
 ```
 
-![](NMR_RF_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](NMR_RF_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 ``` r
 varImpPlot(nmr_RF,type=2)
 ```
 
-![](NMR_RF_files/figure-markdown_github/unnamed-chunk-9-2.png)
+![](NMR_RF_files/figure-markdown_github/unnamed-chunk-8-2.png)
 
 Head circumference variable selection (altman method)
 -----------------------------------------------------
@@ -231,37 +227,7 @@ summary(PimpTest(alt_result))
     ## 
     ##   p-values less than  0.05 :
     ##  ----------------------
-    ##                         VarImp p-value    
-    ## Alanine                 0.0119  <2e-16 ***
-    ## Citric_acid             0.0122  <2e-16 ***
-    ## Creatinine              0.0190  <2e-16 ***
-    ## Glutamic_acid           0.0139  <2e-16 ***
-    ## Glycine                 0.0135  <2e-16 ***
-    ## Isoleucine              0.0141  <2e-16 ***
-    ## Leucine                 0.0223  <2e-16 ***
-    ## Lysine                  0.0115  <2e-16 ***
-    ## Phenylalanine           0.0075   0.004 ** 
-    ## Proline                 0.0033   0.036 *  
-    ## Threonine               0.0358  <2e-16 ***
-    ## Tyrosine                0.0050   0.010 *  
-    ## Valine                  0.0205  <2e-16 ***
-    ## CAR_2_0_                0.0201  <2e-16 ***
-    ## X_2_hydroxybutyric_acid 0.0070  <2e-16 ***
-    ## Acetic_acid             0.0125  <2e-16 ***
-    ## Choline                 0.0037   0.028 *  
-    ## Creatine                0.0072   0.004 ** 
-    ## Formic_acid             0.0109  <2e-16 ***
-    ## Glycerol                0.0101  <2e-16 ***
-    ## Glycolic_acid           0.0107  <2e-16 ***
-    ## Lactic_acid             0.0115  <2e-16 ***
-    ## Acetylcholine           0.0284  <2e-16 ***
-    ## Propionic_acid          0.0040   0.018 *  
-    ## Propylene_glycol        0.0163  <2e-16 ***
-    ## Pyruvic_acid            0.0154  <2e-16 ***
-    ## Succinic_acid           0.0142  <2e-16 ***
-    ## Trimethylamine_N_oxide  0.0433  <2e-16 ***
-    ## Myo_inositol            0.0091  <2e-16 ***
-    ## X_1_Methylhistidine     0.0145  <2e-16 ***
-    ## birthweight_adjusted    0.0620  <2e-16 ***
+    ##           VarImp p-value  
+    ## Threonine 0.0432   0.022 *
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1

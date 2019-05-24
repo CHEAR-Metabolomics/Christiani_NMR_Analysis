@@ -40,25 +40,23 @@ for (i in 1:ncol(nmr)){
 }
 ```
 
-## Metabolite z-scores
-```{r}
-nmr_metab <- nmr[c(48:86)]
-
-# z-score
-nmr_metab <- as.data.frame(lapply(nmr_metab, function(i) scale(i)))
-```
-
 
 ##Residual adjustment
 ```{r}
+# z-score of metabolites
+nmr_metab_bw <- nmr[c(48:86)]
+nmr_metab_bw <- as.data.frame(lapply(nmr_metab_bw, function(i) scale(i)))
+
 ##  Birthweight residual matrix
 bw_model <- lm(birthweight ~ age + bmi + ga.spline1 + ga.spline2 + ga.spline3 + factor(gender) + factor(educat) + factor(parity01), data=nmr)
 bw_adj <- mean(nmr$birthweight) + bw_model$residuals
 
-nmr_metab$birthweight_adjusted <- as.vector(bw_adj)
+nmr_metab_bw$birthweight_adjusted <- as.vector(bw_adj)
 
 ## Head circumference residual matrix
-nmr_metab_hc <- nmr_metab[-which(is.na(nmr$headcircumference)),]
+nmr_metab_hc <- nmr[c(48:86)]
+nmr_metab_hc <- as.data.frame(lapply(nmr_metab_hc, function(i) scale(i)))
+nmr_metab_hc <- nmr_metab_hc[-which(is.na(nmr$headcircumference)),]
 nmr_hc <- nmr[-which(is.na(nmr$headcircumference)),]
 
 hc_model <- lm(headcircumference ~ age + bmi + ga.spline1 + ga.spline2 + ga.spline3 + factor(gender) + factor(educat) + factor(parity01), data=nmr_hc)
@@ -88,7 +86,7 @@ for(i in 1:nrow(hyper_grid)) {
   # train model
   model <- ranger(
     formula         = birthweight_adjusted ~ ., 
-    data            = nmr_metab, 
+    data            = nmr_metab_bw, 
     num.trees       = 1000,
     mtry            = hyper_grid$mtry[i],
     min.node.size   = hyper_grid$node_size[i],
@@ -108,11 +106,11 @@ hyper_grid[which(hyper_grid$OOB_RMSE==min(hyper_grid$OOB_RMSE)),]
 ##Birth weight RF
 ```{r}
 set.seed(seed_RF)
-nmr_RF <- randomForest(birthweight_adjusted ~ ., data=nmr_metab, 
+nmr_RF <- randomForest(birthweight_adjusted ~ ., data=nmr_metab_bw, 
                        ntree=1000, 
                        mtry=3,
                        nodesize=7, 
-                       sampsize=ceiling(0.55*nrow(nmr_metab)),
+                       sampsize=ceiling(0.55*nrow(nmr_metab_bw)),
                        importance=TRUE)
 
 varImpPlot(nmr_RF,type=1)
@@ -122,7 +120,7 @@ varImpPlot(nmr_RF,type=2)
 ##Birth weight variable selection (altman method)
 ```{r}
 set.seed(seed_RF)
-alt_result <- PIMP(nmr_metab[-40], unlist(nmr_metab[40]), nmr_RF, S=500)
+alt_result <- PIMP(nmr_metab_bw[-40], unlist(nmr_metab_bw[40]), nmr_RF, S=500)
 
 summary(alt_result)
 summary(PimpTest(alt_result))
