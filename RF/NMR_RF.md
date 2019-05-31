@@ -63,6 +63,8 @@ hyper_grid <- expand.grid(
 #loop through RF parameters
 for(i in 1:nrow(hyper_grid)) {
   
+  set.seed(seed_RF)
+  
   # train model
   model <- ranger(
     formula         = birthweight_adjusted ~ ., 
@@ -82,7 +84,7 @@ hyper_grid[which(hyper_grid$OOB_RMSE==min(hyper_grid$OOB_RMSE)),]
 ```
 
     ##   ntree mtry node_size sampe_size  OOB_RMSE
-    ## 9  1000    3         7       0.55 0.3468171
+    ## 9  1000    3         7       0.55 0.3470871
 
 Birth weight RF
 ---------------
@@ -101,29 +103,13 @@ varImpPlot(nmr_RF,type=1)
 
 ![](NMR_RF_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
-``` r
-varImpPlot(nmr_RF,type=2)
-```
-
-![](NMR_RF_files/figure-markdown_github/unnamed-chunk-5-2.png)
-
-Birth weight variable selection (altman method)
------------------------------------------------
+Birth weight variable selection (Altmann method)
+------------------------------------------------
 
 ``` r
 set.seed(seed_RF)
-alt_result <- PIMP(nmr_metab_bw[-40], unlist(nmr_metab_bw[40]), nmr_RF, S=500)
+alt_result <- PIMP(nmr_metab_bw[-40], unlist(nmr_metab_bw[40]), nmr_RF, S=500, seed=seed_RF)
 
-summary(alt_result)
-```
-
-    ##           Length Class  Mode     
-    ## VarImp       39  -none- numeric  
-    ## PerVarImp 19500  -none- numeric  
-    ## type          1  -none- character
-    ## call          5  -none- call
-
-``` r
 summary(PimpTest(alt_result))
 ```
 
@@ -131,7 +117,7 @@ summary(PimpTest(alt_result))
     ## PimpTest.default(Pimp = alt_result)
     ## 
     ## PIMP.default(X = nmr_metab_bw[-40], y = unlist(nmr_metab_bw[40]), 
-    ##     rForest = nmr_RF, S = 500)
+    ##     rForest = nmr_RF, S = 500, seed = seed_RF)
     ## type:  [1] "regression"
     ## 
     ## 
@@ -139,8 +125,7 @@ summary(PimpTest(alt_result))
     ##   p-values less than  0.05 :
     ##  ----------------------
     ##                             VarImp p-value  
-    ## Citric_acid                 0.0022   0.044 *
-    ## sn_glycero_3_phosphocholine 0.0016   0.044 *
+    ## sn_glycero_3_phosphocholine 0.0021   0.036 *
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -181,7 +166,7 @@ hyper_grid[which(hyper_grid$OOB_RMSE==min(hyper_grid$OOB_RMSE)),]
 ```
 
     ##    ntree mtry node_size sampe_size OOB_RMSE
-    ## 51  1000    5         3        0.8 1.174115
+    ## 60  1000    6         7        0.8 1.172989
 
 Head circumference RF
 ---------------------
@@ -200,18 +185,12 @@ varImpPlot(nmr_RF,type=1)
 
 ![](NMR_RF_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
-``` r
-varImpPlot(nmr_RF,type=2)
-```
-
-![](NMR_RF_files/figure-markdown_github/unnamed-chunk-8-2.png)
-
-Head circumference variable selection (altman method)
------------------------------------------------------
+Head circumference variable selection (Altmann method)
+------------------------------------------------------
 
 ``` r
 set.seed(seed_RF)
-alt_result <- PIMP(nmr_metab_hc[-40], unlist(nmr_metab_hc[40]), nmr_RF, S=500)
+alt_result <- PIMP(nmr_metab_hc[-40], unlist(nmr_metab_hc[40]), nmr_RF, S=500, seed=seed_RF)
 
 summary(PimpTest(alt_result))
 ```
@@ -220,14 +199,15 @@ summary(PimpTest(alt_result))
     ## PimpTest.default(Pimp = alt_result)
     ## 
     ## PIMP.default(X = nmr_metab_hc[-40], y = unlist(nmr_metab_hc[40]), 
-    ##     rForest = nmr_RF, S = 500)
+    ##     rForest = nmr_RF, S = 500, seed = seed_RF)
     ## type:  [1] "regression"
     ## 
     ## 
     ## 
     ##   p-values less than  0.05 :
     ##  ----------------------
-    ##           VarImp p-value  
-    ## Threonine 0.0432   0.022 *
+    ##                        VarImp p-value  
+    ## Alanine                0.0324   0.040 *
+    ## Trimethylamine_N_oxide 0.0456   0.036 *
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1

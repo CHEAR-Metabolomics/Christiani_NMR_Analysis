@@ -12,7 +12,7 @@ This is an R Markdown document applying Random Forest on preprocessed Metabolomi
 
 ##Setup environment
 ```{r, echo=FALSE}
-.libPaths('J:\\PM\\GenEnv\\Maya Kappil\\myRlib')
+#.libPaths('J:\\PM\\GenEnv\\Maya Kappil\\myRlib')
 base.dir='J:\\PM\\Metabolomics\\Christiani';
 ```
 
@@ -83,6 +83,8 @@ hyper_grid <- expand.grid(
 #loop through RF parameters
 for(i in 1:nrow(hyper_grid)) {
   
+  set.seed(seed_RF)
+  
   # train model
   model <- ranger(
     formula         = birthweight_adjusted ~ ., 
@@ -114,15 +116,13 @@ nmr_RF <- randomForest(birthweight_adjusted ~ ., data=nmr_metab_bw,
                        importance=TRUE)
 
 varImpPlot(nmr_RF,type=1)
-varImpPlot(nmr_RF,type=2)
 ```
 
-##Birth weight variable selection (altman method)
+##Birth weight variable selection (Altmann method)
 ```{r}
 set.seed(seed_RF)
-alt_result <- PIMP(nmr_metab_bw[-40], unlist(nmr_metab_bw[40]), nmr_RF, S=500)
+alt_result <- PIMP(nmr_metab_bw[-40], unlist(nmr_metab_bw[40]), nmr_RF, S=500, seed=seed_RF)
 
-summary(alt_result)
 summary(PimpTest(alt_result))
 ```
 
@@ -173,14 +173,12 @@ nmr_RF <- randomForest(headcircumference_adjusted ~ ., data=nmr_metab_hc,
                        importance=TRUE)
 
 varImpPlot(nmr_RF,type=1)
-varImpPlot(nmr_RF,type=2)
 ```
 
-
-##Head circumference variable selection (altman method)
+##Head circumference variable selection (Altmann method)
 ```{r}
 set.seed(seed_RF)
-alt_result <- PIMP(nmr_metab_hc[-40], unlist(nmr_metab_hc[40]), nmr_RF, S=500)
+alt_result <- PIMP(nmr_metab_hc[-40], unlist(nmr_metab_hc[40]), nmr_RF, S=500, seed=seed_RF)
 
 summary(PimpTest(alt_result))
 ```
